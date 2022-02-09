@@ -98,6 +98,7 @@ export const getSettings = createSelector(
 			hasFixedToolbar: isFeatureActive( state, 'fixedToolbar' ),
 			__experimentalSetIsInserterOpened: setIsInserterOpen,
 			__experimentalReusableBlocks: getReusableBlocks( state ),
+			__experimentalPrioritizePatternsOnQuickInserterRoot: true,
 		};
 
 		const canUserCreateMedia = getCanUserCreateMedia( state );
