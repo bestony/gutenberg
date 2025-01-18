@@ -11,7 +11,7 @@ import { useSelect } from '@wordpress/data';
 /**
  * Internal dependencies
  */
-import { PostTypeSupportCheck } from '../';
+import PostTypeSupportCheck from '../';
 
 jest.mock( '@wordpress/data/src/components/use-select', () => {
 	// This allows us to tweak the returned value on each test.
@@ -29,7 +29,7 @@ function setupUseSelectMock( postType ) {
 }
 
 describe( 'PostTypeSupportCheck', () => {
-	it( 'renders its children when post type is not known', () => {
+	it( 'does not render its children when post type is not known', () => {
 		setupUseSelectMock( undefined );
 
 		const { container } = render(
@@ -38,7 +38,7 @@ describe( 'PostTypeSupportCheck', () => {
 			</PostTypeSupportCheck>
 		);
 
-		expect( container ).toHaveTextContent( 'Supported' );
+		expect( container ).not.toHaveTextContent( 'Supported' );
 	} );
 
 	it( 'does not render its children when post type is known and not supports', () => {

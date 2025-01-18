@@ -15,12 +15,12 @@ import {
 	privateApis,
 } from '@wordpress/block-editor';
 import { useSelect, useDispatch, useRegistry } from '@wordpress/data';
+import { store as coreDataStore } from '@wordpress/core-data';
 import { createBlock, store as blocksStore } from '@wordpress/blocks';
 
 /**
  * Internal dependencies
  */
-import { name } from './block.json';
 import { unlock } from '../lock-unlock';
 
 const { usesContextKey } = unlock( privateApis );
@@ -37,13 +37,14 @@ export const format = {
 	attributes: {
 		'data-fn': 'data-fn',
 	},
+	interactive: true,
 	contentEditable: false,
-	[ usesContextKey ]: [ 'postType' ],
+	[ usesContextKey ]: [ 'postType', 'postId' ],
 	edit: function Edit( {
 		value,
 		onChange,
 		isObjectActive,
-		context: { postType },
+		context: { postType, postId },
 	} ) {
 		const registry = useRegistry();
 		const {
@@ -52,39 +53,53 @@ export const format = {
 			getBlockRootClientId,
 			getBlockName,
 			getBlockParentsByBlockName,
-		} = useSelect( blockEditorStore );
-		const footnotesBlockType = useSelect( ( select ) =>
-			select( blocksStore ).getBlockType( name )
+		} = registry.select( blockEditorStore );
+		const isFootnotesSupported = useSelect(
+			( select ) => {
+				if (
+					! select( blocksStore ).getBlockType( 'core/footnotes' )
+				) {
+					return false;
+				}
+
+				const allowedBlocks =
+					select( blockEditorStore ).getSettings().allowedBlockTypes;
+				if (
+					allowedBlocks === false ||
+					( Array.isArray( allowedBlocks ) &&
+						! allowedBlocks.includes( 'core/footnotes' ) )
+				) {
+					return false;
+				}
+
+				const entityRecord = select( coreDataStore ).getEntityRecord(
+					'postType',
+					postType,
+					postId
+				);
+
+				if ( 'string' !== typeof entityRecord?.meta?.footnotes ) {
+					return false;
+				}
+
+				// Checks if the selected block lives within a pattern.
+				const {
+					getBlockParentsByBlockName: _getBlockParentsByBlockName,
+					getSelectedBlockClientId: _getSelectedBlockClientId,
+				} = select( blockEditorStore );
+				const parentCoreBlocks = _getBlockParentsByBlockName(
+					_getSelectedBlockClientId(),
+					SYNCED_PATTERN_BLOCK_NAME
+				);
+				return ! parentCoreBlocks || parentCoreBlocks.length === 0;
+			},
+			[ postType, postId ]
 		);
-		/*
-		 * This useSelect exists because we need to use its return value
-		 * outside the event callback.
-		 */
-		const isBlockWithinPattern = useSelect( ( select ) => {
-			const {
-				getBlockParentsByBlockName: _getBlockParentsByBlockName,
-				getSelectedBlockClientId: _getSelectedBlockClientId,
-			} = select( blockEditorStore );
-			const parentCoreBlocks = _getBlockParentsByBlockName(
-				_getSelectedBlockClientId(),
-				SYNCED_PATTERN_BLOCK_NAME
-			);
-			return parentCoreBlocks && parentCoreBlocks.length > 0;
-		}, [] );
 
 		const { selectionChange, insertBlock } =
 			useDispatch( blockEditorStore );
 
-		if ( ! footnotesBlockType ) {
-			return null;
-		}
-
-		if ( postType !== 'post' && postType !== 'page' ) {
-			return null;
-		}
-
-		// Checks if the selected block lives within a pattern.
-		if ( isBlockWithinPattern ) {
+		if ( ! isFootnotesSupported ) {
 			return null;
 		}
 
@@ -135,7 +150,7 @@ export const format = {
 					const queue = [ ...blocks ];
 					while ( queue.length ) {
 						const block = queue.shift();
-						if ( block.name === name ) {
+						if ( block.name === 'core/footnotes' ) {
 							fnBlock = block;
 							break;
 						}
@@ -156,7 +171,7 @@ export const format = {
 						rootClientId = getBlockRootClientId( rootClientId );
 					}
 
-					fnBlock = createBlock( name );
+					fnBlock = createBlock( 'core/footnotes' );
 
 					insertBlock( fnBlock, undefined, rootClientId );
 				}

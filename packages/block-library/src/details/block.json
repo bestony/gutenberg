@@ -5,7 +5,7 @@
 	"title": "Details",
 	"category": "text",
 	"description": "Hide and show additional content.",
-	"keywords": [ "disclosure", "summary", "hide" ],
+	"keywords": [ "accordion", "summary", "toggle", "disclosure" ],
 	"textdomain": "default",
 	"attributes": {
 		"showContent": {
@@ -13,11 +13,24 @@
 			"default": false
 		},
 		"summary": {
-			"type": "string"
+			"type": "rich-text",
+			"source": "rich-text",
+			"selector": "summary"
+		},
+		"name": {
+			"type": "string",
+			"source": "attribute",
+			"attribute": "name",
+			"selector": ".wp-block-details"
+		},
+		"allowedBlocks": {
+			"type": "array"
 		}
 	},
 	"supports": {
+		"__experimentalOnEnter": true,
 		"align": [ "wide", "full" ],
+		"anchor": true,
 		"color": {
 			"gradients": true,
 			"link": true,
@@ -56,6 +69,9 @@
 		},
 		"layout": {
 			"allowEditing": false
+		},
+		"interactivity": {
+			"clientNavigation": true
 		}
 	},
 	"editorStyle": "wp-block-details-editor",
